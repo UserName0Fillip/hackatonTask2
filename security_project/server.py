@@ -38,7 +38,7 @@ def broadcast_message(sender, message):
                 encrypted_message = rsa.encrypt(message.encode(), client_keys[client])
                 client.send(encrypted_message)
             except Exception as e:
-                print(f"Ошибка при отправке сообщения клиенту {client_address}: {e}")
+                print(f"Ошибка при отправке сообщения клиенту")
                 client.close()
                 clients.remove((client, client_address))
 
@@ -52,7 +52,7 @@ def send_file(receiver, sender, file_metadata, file_data):
         
         # Отправка содержимого файла
         receiver.sendall(file_data)
-        print(f"Файл успешно отправлен от {sender.getpeername()} к {receiver.getpeername()}.")
+        print(f"Файл успешно отправлен.")
     except Exception as e:
         print(f"Ошибка при отправке файла: {e}")
         receiver.close()
@@ -81,7 +81,7 @@ def handle_client(client, address):
                         # Обработка передачи файла
                         _, file_name, file_size = message.split(":")
                         file_size = int(file_size)
-                        print(f"Получен файл от {address}: {file_name} ({file_size} байт)")
+                        print(f"Получен файл {file_name} ({file_size} байт)")
 
                         # Получение файла
                         received_data = b""
@@ -89,7 +89,7 @@ def handle_client(client, address):
                             chunk = client.recv(2048)
                             received_data += chunk
 
-                        print(f"Файл {file_name} полностью получен от {address}.")
+                        print(f"Файл {file_name} полностью получен.")
                         # Отправка файла другим клиентам
                         for receiver, _ in clients:
                             if receiver != client:
@@ -99,8 +99,8 @@ def handle_client(client, address):
                         clients.remove((client, address))
                         break
                     else:
-                        print(f"[{address}]: {message}")
-                        broadcast_message(client, f"Сообщение от {address}: {message}")
+                        print(f"{message}")
+                        broadcast_message(client, f"Сообщение отправлено")
                 else:
                     break
             except Exception as e:
@@ -125,10 +125,9 @@ def accept_clients():
 accept_clients_thread = threading.Thread(target=accept_clients, daemon=True)
 accept_clients_thread.start()
 
-# Основной поток сервера
+# Основной поток сервера, основной поток может выполнять другие задачи или просто ожидать завершения
 try:
     while True:
-        # Основной поток может выполнять другие задачи или просто ожидать завершения
         pass
 except KeyboardInterrupt:
     print("Сервер остановлен.")

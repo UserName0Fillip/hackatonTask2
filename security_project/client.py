@@ -11,15 +11,15 @@ client_connected = True
 
 # Создание SSL контекста
 context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH)
-context.check_hostname = False  # Отключаем проверку hostname
-context.verify_mode = ssl.CERT_NONE  # Отключаем проверку сертификата
+context.check_hostname = False  
+context.verify_mode = ssl.CERT_NONE  
 
-# Подключение к серверу с использованием SSL
+
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_ssl = context.wrap_socket(client, server_hostname="192.168.56.1")
 client_ssl.connect(("192.168.56.1", 9999))
 
-# Получение публичного ключа сервера
+
 server_public_key = rsa.PublicKey.load_pkcs1(client_ssl.recv(2048))
 client_ssl.send(public_key.save_pkcs1("PEM"))
 
@@ -28,10 +28,8 @@ def save_file_to_downloads(file_name, file_data):
     Сохранение файла в папку загрузок.
     """
     try:
-        # Путь к папке загрузок
         download_path = os.path.join(os.path.expanduser("~"), "Downloads", file_name)
 
-        # Сохранение файла
         with open(download_path, "wb") as file:
             file.write(file_data)
 
@@ -48,11 +46,9 @@ def send_file(file_path):
         with open(file_path, "rb") as file:
             file_data = file.read()
 
-        # Отправка метаинформации о файле
         metadata = f"FILE:{file_name}:{len(file_data)}"
         client_ssl.send(rsa.encrypt(metadata.encode(), server_public_key))
 
-        # Отправка содержимого файла
         client_ssl.sendall(file_data)
         print(f"Файл '{file_name}' успешно отправлен!")
     except Exception as e:
@@ -74,13 +70,11 @@ def receive_messages():
                     file_size = int(file_size)
                     print(f"Скачивание файла: {file_name} ({file_size} байт)")
 
-                    # Получение содержимого файла
                     received_data = b""
                     while len(received_data) < file_size:
                         chunk = client_ssl.recv(2048)
                         received_data += chunk
 
-                    # Сохраняем файл в папке загрузок
                     save_file_to_downloads(file_name, received_data)
                 else:
                     print(f"Сообщение: {message}")
@@ -93,6 +87,15 @@ def send_messages():
     Отправка сообщений на сервер.
     """
     global client_connected
+
+    if client_connected :
+        print("Доступные команды:")
+        print("/help - Вывод всех доступных команд.")
+        print("/sendFile - Отправить файл на сервер.")
+        print("/exit - Выйти из чата.")
+        print("/endChat - Завершить чат.")
+        print("Просто введите текст, чтобы отправить сообщение.")
+    
     while client_connected:
         try:
             message = input()
@@ -120,9 +123,7 @@ def send_messages():
             print(f"Ошибка отправки сообщения: {e}")
             break
 
-# Запуск потоков
 threading.Thread(target=receive_messages, daemon=True).start()
 send_messages()
 
-# Закрытие соединения
 client_ssl.close()
